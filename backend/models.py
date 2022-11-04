@@ -349,8 +349,7 @@ class Review(models.Model):
     """
     dt = models.DateTimeField(auto_now_add=True, verbose_name='Дата')
     review = models.TextField(max_length=200, verbose_name='Отзыв')
-    assessment_quality_work = models.PositiveSmallIntegerField(max_length=1,
-                                                               verbose_name='Оценка качества выполнения работ')
+    assessment_quality_work = models.PositiveSmallIntegerField(verbose_name='Оценка качества выполнения работ')
     closing_result = models.OneToOneField(ClosingResult,
                                           verbose_name='Результат закрытия',
                                           blank=True, null=True,
