@@ -101,18 +101,18 @@ class User(AbstractUser):
             'unique': _('A user with that username already exists.'),
         },
     )
-    organization_id = models.ForeignKey(Organization,
-                                        verbose_name='Организация',
-                                        related_name='organizations',
-                                        blank=True,
-                                        null=True,
-                                        on_delete=models.CASCADE)
-    implementing_organization_id = models.ForeignKey(ImplementingOrganization,
-                                                     verbose_name='Организация-исполнитель',
-                                                     related_name='implementing_organizations',
-                                                     blank=True,
-                                                     null=True,
-                                                     on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization,
+                                     verbose_name='Организация',
+                                     related_name='organizations',
+                                     blank=True,
+                                     null=True,
+                                     on_delete=models.CASCADE)
+    implementing_organization = models.ForeignKey(ImplementingOrganization,
+                                                  verbose_name='Организация-исполнитель',
+                                                  related_name='implementing_organizations',
+                                                  blank=True,
+                                                  null=True,
+                                                  on_delete=models.CASCADE)
 
     def __str__(self):
         return self.username
@@ -123,7 +123,7 @@ class User(AbstractUser):
         ordering = ('username',)
         constraints = [
             models.CheckConstraint(
-                check=Q(organization_id__isnull=False) | Q(implementing_organization_id__isnull=False),
+                check=Q(organization__isnull=False) | Q(implementing_organization__isnull=False),
                 name='not_both_null'
             )
         ]
@@ -153,7 +153,7 @@ class Address(models.Model):
     district_code = models.PositiveSmallIntegerField(verbose_name='Код района')
     problem_address = models.CharField(max_length=100, unique=True, verbose_name='Адрес проблемы')
     unom = models.PositiveIntegerField(unique=True, verbose_name='УНОМ')
-    ods_id = models.ForeignKey(ODS, verbose_name='ОДС', blank=True, related_name='ods', on_delete=models.CASCADE)
+    ods = models.ForeignKey(ODS, verbose_name='ОДС', blank=True, related_name='ods', on_delete=models.CASCADE)
     management_company = models.CharField(max_length=100, verbose_name='Наименование управляющей компании')
 
     class Meta:
@@ -206,11 +206,11 @@ class SecurityEvents(models.Model):
     name = models.CharField(max_length=200, unique=True, verbose_name='Наименование')
     root_version_id = models.PositiveIntegerField(unique=True, verbose_name='Идентификатор корневой версии')
     term = models.DateTimeField(verbose_name='Срок')
-    work_performed_type_id = models.ForeignKey(WorkPerformedType,
-                                               verbose_name='Вид выполненных работ',
-                                               blank=True,
-                                               related_name='security_events',
-                                               on_delete=models.CASCADE)
+    work_performed_type = models.ForeignKey(WorkPerformedType,
+                                            verbose_name='Вид выполненных работ',
+                                            blank=True,
+                                            related_name='security_events',
+                                            on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Охранные мероприятия'
@@ -248,15 +248,15 @@ class Request(models.Model):
     question = models.TextField(max_length=1000, blank=True, verbose_name='Наличие у заявителя вопроса')
     urgency_category_name = models.CharField(max_length=9, verbose_name='Наименование категории срочности')
     urgency_category_code = models.CharField(max_length=9, verbose_name='Код категории срочности')
-    address_id = models.ForeignKey(Address, verbose_name='Адрес', blank=True, related_name='requests', on_delete=models.CASCADE)
+    address = models.ForeignKey(Address, verbose_name='Адрес', blank=True, related_name='requests', on_delete=models.CASCADE)
     entrance = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='Подъезд')
     floor = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='Этаж')
     apartment = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='Квартира')
-    implementing_organization_id = models.ForeignKey(ImplementingOrganization,
-                                                     verbose_name='Организация-исполнитель',
-                                                     blank=True,
-                                                     related_name='requests',
-                                                     on_delete=models.CASCADE)
+    implementing_organization = models.ForeignKey(ImplementingOrganization,
+                                                  verbose_name='Организация-исполнитель',
+                                                  blank=True,
+                                                  related_name='requests',
+                                                  on_delete=models.CASCADE)
     status_name = models.CharField(max_length=17, verbose_name='Наименование статуса')
     status_code = models.CharField(max_length=17, verbose_name='Код статуса')
     desired_time_from = models.CharField(max_length=70, blank=True, verbose_name='Желаемое время с')
@@ -264,8 +264,8 @@ class Request(models.Model):
     payment_category_name = models.CharField(max_length=17, verbose_name='Наименование категории платности')
     payment_category_code = models.CharField(max_length=14, verbose_name='Код категории платности')
     card_payment_sign = models.CharField(max_length=3, verbose_name='Признак оплаты картой')
-    defect_id = models.ForeignKey(Defect, verbose_name='Дефект', blank=True, related_name='requests', on_delete=models.CASCADE)
-    user_id = models.ForeignKey(User, verbose_name='Пользователь', blank=True, related_name='requests', on_delete=models.CASCADE)
+    defect = models.ForeignKey(Defect, verbose_name='Дефект', blank=True, related_name='requests', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, verbose_name='Пользователь', blank=True, related_name='requests', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Заявка'
@@ -320,23 +320,23 @@ class ClosingResult(models.Model):
                                                               verbose_name='Описание выполненных действий при '
                                                                            'проведении охранных мероприятий')
     effectiveness = models.CharField(max_length=33, verbose_name='Результативность')
-    marm_executor_id = models.ForeignKey(MarmExecutor,
-                                         verbose_name='МАРМ (Исполнитель)',
-                                         blank=True,
-                                         null=True,
-                                         related_name='closing_results',
-                                         on_delete=models.CASCADE)
-    marm_implementing_organization_id = models.ForeignKey(MarmImplementingOrganization,
-                                                          verbose_name='МАРМ (Организация-исполнитель)',
-                                                          blank=True,
-                                                          null=True,
-                                                          related_name='closing_results',
-                                                          on_delete=models.CASCADE)
+    marm_executor = models.ForeignKey(MarmExecutor,
+                                      verbose_name='МАРМ (Исполнитель)',
+                                      blank=True,
+                                      null=True,
+                                      related_name='closing_results',
+                                      on_delete=models.CASCADE)
+    marm_implementing_organization = models.ForeignKey(MarmImplementingOrganization,
+                                                       verbose_name='МАРМ (Организация-исполнитель)',
+                                                       blank=True,
+                                                       null=True,
+                                                       related_name='closing_results',
+                                                       on_delete=models.CASCADE)
     efficiency_code = models.CharField(max_length=9, verbose_name='Код результативности')
     being_under_revision_sign = models.CharField(max_length=3, verbose_name='Признак нахождения на доработке')
     sign_alerted = models.CharField(max_length=3, verbose_name='Признак “Оповещен”')
     closing_date = models.DateTimeField(auto_now=True, verbose_name='Дата закрытия')
-    request_id = models.OneToOneField(Request, verbose_name='Заявка', blank=True, on_delete=models.CASCADE)
+    request = models.OneToOneField(Request, verbose_name='Заявка', blank=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Результат закрытия'
@@ -351,10 +351,10 @@ class Review(models.Model):
     review = models.TextField(max_length=200, verbose_name='Отзыв')
     assessment_quality_work = models.PositiveSmallIntegerField(max_length=1,
                                                                verbose_name='Оценка качества выполнения работ')
-    closing_result_id = models.OneToOneField(ClosingResult,
-                                             verbose_name='Результат закрытия',
-                                             blank=True, null=True,
-                                             on_delete=models.CASCADE)
+    closing_result = models.OneToOneField(ClosingResult,
+                                          verbose_name='Результат закрытия',
+                                          blank=True, null=True,
+                                          on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Отзыв'
@@ -367,11 +367,11 @@ class Refinement(models.Model):
     """
     return_count = models.PositiveSmallIntegerField(verbose_name='Кол-во возвратов')
     last_return_date = models.DateTimeField(auto_now=True, verbose_name='Дата последнего возврата')
-    closing_result_id = models.OneToOneField(ClosingResult,
-                                             verbose_name='Результат закрытия',
-                                             blank=True,
-                                             null=True,
-                                             on_delete=models.CASCADE)
+    closing_result = models.OneToOneField(ClosingResult,
+                                          verbose_name='Результат закрытия',
+                                          blank=True,
+                                          null=True,
+                                          on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Доработка'
