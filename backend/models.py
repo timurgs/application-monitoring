@@ -86,11 +86,12 @@ class User(AbstractUser):
     """
     REQUIRED_FIELDS = []
     objects = UserManager()
-    email = None
-    first_name = None
-    last_name = None
+    # email = None
+    # first_name = None
+    # last_name = None
     position = models.CharField(verbose_name='Должность', max_length=40, blank=True)
     username_validator = UnicodeUsernameValidator()
+    middle_name = models.CharField(_('middle name'), max_length=160, blank=True)
     username = models.CharField(
         _('username'),
         max_length=20,
@@ -103,13 +104,13 @@ class User(AbstractUser):
     )
     organization = models.ForeignKey(Organization,
                                      verbose_name='Организация',
-                                     related_name='organizations',
+                                     related_name='users',
                                      blank=True,
                                      null=True,
                                      on_delete=models.CASCADE)
     implementing_organization = models.ForeignKey(ImplementingOrganization,
                                                   verbose_name='Организация-исполнитель',
-                                                  related_name='implementing_organizations',
+                                                  related_name='users',
                                                   blank=True,
                                                   null=True,
                                                   on_delete=models.CASCADE)
@@ -121,12 +122,12 @@ class User(AbstractUser):
         verbose_name = 'Пользователь',
         verbose_name_plural = 'Список пользователей',
         ordering = ('username',)
-        constraints = [
-            models.CheckConstraint(
-                check=Q(organization__isnull=False) | Q(implementing_organization__isnull=False),
-                name='not_both_null'
-            )
-        ]
+        # constraints = [
+        #     models.CheckConstraint(
+        #         check=Q(organization__isnull=False) | Q(implementing_organization__isnull=False),
+        #         name='not_both_null'
+        #     )
+        # ]
 
 
 class ODS(models.Model):
@@ -153,7 +154,7 @@ class Address(models.Model):
     district_code = models.PositiveSmallIntegerField(verbose_name='Код района')
     problem_address = models.CharField(max_length=100, unique=True, verbose_name='Адрес проблемы')
     unom = models.PositiveIntegerField(unique=True, verbose_name='УНОМ')
-    ods = models.ForeignKey(ODS, verbose_name='ОДС', blank=True, related_name='ods', on_delete=models.CASCADE)
+    ods = models.ForeignKey(ODS, verbose_name='ОДС', blank=True, related_name='addresses', on_delete=models.CASCADE)
     management_company = models.CharField(max_length=100, verbose_name='Наименование управляющей компании')
 
     class Meta:
@@ -171,11 +172,15 @@ class Defect(models.Model):
     category_name = models.CharField(max_length=33, verbose_name='Наименование категории')
     category_root_id = models.PositiveIntegerField(verbose_name='Корневой идентификатор категории')
     category_code = models.CharField(max_length=100, blank=True, verbose_name='Код категории')
-    name = models.CharField(max_length=150, verbose_name='Наименование'),
+    name = models.CharField(max_length=150, verbose_name='Наименование')
     short_name = models.CharField(max_length=150, verbose_name='Краткое наименование')
     identifier = models.PositiveIntegerField(verbose_name='Идентификатор')
     code = models.CharField(max_length=150, verbose_name='Код')
+    urgency_category_name = models.CharField(max_length=9, verbose_name='Наименование категории срочности')
+    urgency_category_code = models.CharField(max_length=9, verbose_name='Код категории срочности')
     sign_return_for_revision = models.CharField(max_length=3, verbose_name='Признак возврата на доработку')
+    another_term = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='Повторный срок')
+    repeated_location = models.CharField(max_length=13, blank=True, verbose_name='Повторная локация')
 
     class Meta:
         verbose_name = 'Дефект'
@@ -228,7 +233,9 @@ class Request(models.Model):
     root_id = models.PositiveIntegerField(unique=True, verbose_name='Корневой ИД')
     version_id = models.PositiveIntegerField(unique=True, blank=True, null=True, verbose_name='ИД версии')
     number = models.CharField(max_length=11, unique=True, verbose_name='Номер')
-    unique_public_services_appeal_number = models.CharField(max_length=27,
+    # number = models.PositiveIntegerField(unique=True, verbose_name='Номер')
+    unique_public_services_appeal_number = models.CharField(max_length=50,
+                                                            unique=True,
                                                             verbose_name='Уникальный номер обращения ГУ (mos.ru)',
                                                             blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
@@ -246,15 +253,20 @@ class Request(models.Model):
     comments = models.TextField(max_length=1000, blank=True, null=True, verbose_name='Комментарии')
     description = models.TextField(max_length=1000, verbose_name='Описание')
     question = models.TextField(max_length=1000, blank=True, verbose_name='Наличие у заявителя вопроса')
-    urgency_category_name = models.CharField(max_length=9, verbose_name='Наименование категории срочности')
-    urgency_category_code = models.CharField(max_length=9, verbose_name='Код категории срочности')
-    address = models.ForeignKey(Address, verbose_name='Адрес', blank=True, related_name='requests', on_delete=models.CASCADE)
+    # urgency_category_name = models.CharField(max_length=9, verbose_name='Наименование категории срочности')
+    # urgency_category_code = models.CharField(max_length=9, verbose_name='Код категории срочности')
+    address = models.ForeignKey(Address,
+                                verbose_name='Адрес',
+                                blank=True,
+                                related_name='requests',
+                                on_delete=models.CASCADE)
     entrance = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='Подъезд')
     floor = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='Этаж')
     apartment = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='Квартира')
     implementing_organization = models.ForeignKey(ImplementingOrganization,
                                                   verbose_name='Организация-исполнитель',
                                                   blank=True,
+                                                  null=True,
                                                   related_name='requests',
                                                   on_delete=models.CASCADE)
     status_name = models.CharField(max_length=17, verbose_name='Наименование статуса')
@@ -264,8 +276,16 @@ class Request(models.Model):
     payment_category_name = models.CharField(max_length=17, verbose_name='Наименование категории платности')
     payment_category_code = models.CharField(max_length=14, verbose_name='Код категории платности')
     card_payment_sign = models.CharField(max_length=3, verbose_name='Признак оплаты картой')
-    defect = models.ForeignKey(Defect, verbose_name='Дефект', blank=True, related_name='requests', on_delete=models.CASCADE)
-    user = models.ForeignKey(User, verbose_name='Пользователь', blank=True, related_name='requests', on_delete=models.CASCADE)
+    defect = models.ForeignKey(Defect,
+                               verbose_name='Дефект',
+                               blank=True,
+                               related_name='requests',
+                               on_delete=models.CASCADE)
+    user = models.ForeignKey(User,
+                             verbose_name='Пользователь',
+                             blank=True,
+                             related_name='requests',
+                             on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Заявка'
@@ -314,7 +334,9 @@ class ClosingResult(models.Model):
     """
     consumed_material = models.CharField(max_length=200, blank=True, verbose_name='Израсходованный материал')
     security_events_sign = models.CharField(max_length=3, verbose_name='Признак проведения охранных мероприятий')
-    security_events_time = models.DateTimeField(blank=True, null=True, verbose_name='Время проведения охранных мероприятий')
+    security_events_time = models.DateTimeField(blank=True,
+                                                null=True,
+                                                verbose_name='Время проведения охранных мероприятий')
     actions_taken_during_security_measures = models.CharField(max_length=500,
                                                               blank=True,
                                                               verbose_name='Описание выполненных действий при '
@@ -336,7 +358,7 @@ class ClosingResult(models.Model):
     being_under_revision_sign = models.CharField(max_length=3, verbose_name='Признак нахождения на доработке')
     sign_alerted = models.CharField(max_length=3, verbose_name='Признак “Оповещен”')
     closing_date = models.DateTimeField(auto_now=True, verbose_name='Дата закрытия')
-    request = models.OneToOneField(Request, verbose_name='Заявка', blank=True, on_delete=models.CASCADE)
+    request = models.OneToOneField(Request, verbose_name='Заявка', related_name='closing_result', blank=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Результат закрытия'
@@ -364,7 +386,7 @@ class Refinement(models.Model):
     """
     Модель доработок
     """
-    return_count = models.PositiveSmallIntegerField(verbose_name='Кол-во возвратов')
+    return_count = models.PositiveSmallIntegerField(default=0, verbose_name='Кол-во возвратов')
     last_return_date = models.DateTimeField(auto_now=True, verbose_name='Дата последнего возврата')
     closing_result = models.OneToOneField(ClosingResult,
                                           verbose_name='Результат закрытия',
