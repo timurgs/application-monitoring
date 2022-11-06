@@ -1,10 +1,8 @@
 from django.contrib.auth.base_user import BaseUserManager
-from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.apps import apps
-
 from django.db import models
 
 
@@ -86,9 +84,8 @@ class User(AbstractUser):
     """
     REQUIRED_FIELDS = []
     objects = UserManager()
-    # email = None
-    # first_name = None
-    # last_name = None
+    first_name = models.CharField(_("first name"), max_length=150)
+    last_name = models.CharField(_("last name"), max_length=150)
     position = models.CharField(verbose_name='Должность', max_length=40, blank=True)
     username_validator = UnicodeUsernameValidator()
     middle_name = models.CharField(_('middle name'), max_length=160, blank=True)
@@ -122,12 +119,6 @@ class User(AbstractUser):
         verbose_name = 'Пользователь',
         verbose_name_plural = 'Список пользователей',
         ordering = ('username',)
-        # constraints = [
-        #     models.CheckConstraint(
-        #         check=Q(organization__isnull=False) | Q(implementing_organization__isnull=False),
-        #         name='not_both_null'
-        #     )
-        # ]
 
 
 class ODS(models.Model):
@@ -233,7 +224,6 @@ class Request(models.Model):
     root_id = models.PositiveIntegerField(unique=True, verbose_name='Корневой ИД')
     version_id = models.PositiveIntegerField(unique=True, blank=True, null=True, verbose_name='ИД версии')
     number = models.CharField(max_length=11, unique=True, verbose_name='Номер')
-    # number = models.PositiveIntegerField(unique=True, verbose_name='Номер')
     unique_public_services_appeal_number = models.CharField(max_length=50,
                                                             unique=True,
                                                             verbose_name='Уникальный номер обращения ГУ (mos.ru)',
@@ -253,8 +243,6 @@ class Request(models.Model):
     comments = models.TextField(max_length=1000, blank=True, null=True, verbose_name='Комментарии')
     description = models.TextField(max_length=1000, verbose_name='Описание')
     question = models.TextField(max_length=1000, blank=True, verbose_name='Наличие у заявителя вопроса')
-    # urgency_category_name = models.CharField(max_length=9, verbose_name='Наименование категории срочности')
-    # urgency_category_code = models.CharField(max_length=9, verbose_name='Код категории срочности')
     address = models.ForeignKey(Address,
                                 verbose_name='Адрес',
                                 blank=True,
@@ -358,7 +346,11 @@ class ClosingResult(models.Model):
     being_under_revision_sign = models.CharField(max_length=3, verbose_name='Признак нахождения на доработке')
     sign_alerted = models.CharField(max_length=3, verbose_name='Признак “Оповещен”')
     closing_date = models.DateTimeField(auto_now=True, verbose_name='Дата закрытия')
-    request = models.OneToOneField(Request, verbose_name='Заявка', related_name='closing_result', blank=True, on_delete=models.CASCADE)
+    request = models.OneToOneField(Request,
+                                   verbose_name='Заявка',
+                                   related_name='closing_result',
+                                   blank=True,
+                                   on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Результат закрытия'
